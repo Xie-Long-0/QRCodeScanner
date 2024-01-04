@@ -1,5 +1,5 @@
 # QRCodeScanner
 
-基于 Qt 6.5.2 自编译的 [QZXing](https://github.com/ftylitak/qzxing) 库写的一个二维码识别工具，需要调用相机采集图像。
+基于 [zxing-cpp](https://github.com/zxing-cpp/zxing-cpp) 库写的一维码、二维码识别工具，需要调用相机采集图像，识别后标记识别的区域。
 
- - 暂无后续改进计划-_-
+zxing-cpp库本身未引用Qt库，仅通过定义头文件`ZXingQtReader.h`实现相应的转换。

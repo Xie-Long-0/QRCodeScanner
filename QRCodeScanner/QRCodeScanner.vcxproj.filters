@@ -26,15 +26,6 @@
     <QtRcc Include="QRCodeScanner.qrc">
       <Filter>Resource Files</Filter>
     </QtRcc>
-    <QtUic Include="QRCodeScanner.ui">
-      <Filter>Form Files</Filter>
-    </QtUic>
-    <QtMoc Include="QRCodeScanner.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <ClCompile Include="QRCodeScanner.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <None Include="QRCodeScanner.ico">
       <Filter>Resource Files</Filter>
     </None>
@@ -43,21 +34,24 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ImageCaptureWidget.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <QtUic Include="src\QRCodeScanner.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="ImageCaptureWidget.h">
+    <QtMoc Include="src\QRCodeScanner.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <QtUic Include="ImageCaptureWidget.ui">
-      <Filter>Form Files</Filter>
-    </QtUic>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\QRCodeScanner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>

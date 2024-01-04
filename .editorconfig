@@ -15,19 +15,6 @@ cpp_generate_documentation_comments = doxygen_slash_star
 
 # Visual C++ 格式设置
 
-cpp_indent_braces = false
-cpp_indent_multi_line_relative_to = innermost_parenthesis
-cpp_indent_within_parentheses = align_to_parenthesis
-cpp_indent_preserve_within_parentheses = true
-cpp_indent_case_contents = true
-cpp_indent_case_labels = false
-cpp_indent_case_contents_when_block = false
-cpp_indent_lambda_braces_when_parameter = true
-cpp_indent_goto_labels = leftmost_column
-cpp_indent_preprocessor = leftmost_column
-cpp_indent_access_specifiers = false
-cpp_indent_namespace_contents = false
-cpp_indent_preserve_comments = false
 cpp_new_line_before_open_brace_namespace = new_line
 cpp_new_line_before_open_brace_type = new_line
 cpp_new_line_before_open_brace_function = new_line
@@ -72,4 +59,3 @@ cpp_space_around_binary_operator = insert
 cpp_space_around_assignment_operator = insert
 cpp_space_pointer_reference_alignment = right
 cpp_space_around_ternary_operator = insert
-cpp_wrap_preserve_blocks = never

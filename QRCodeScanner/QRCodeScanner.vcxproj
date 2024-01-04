@@ -31,12 +31,12 @@
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
-    <QtInstall>qt6.5</QtInstall>
+    <QtInstall>qt6</QtInstall>
     <QtModules>core;gui;widgets;multimedia;multimediawidgets</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
-    <QtInstall>qt6.5</QtInstall>
+    <QtInstall>qt6</QtInstall>
     <QtModules>core;gui;widgets;multimedia;multimediawidgets</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
@@ -65,33 +65,33 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include/;src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QZXing3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ZXingDebug/ZXing.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(ProjectDir)lib\QZXing3d.dll" "$(OutDir)QZXing3d.dll"</Command>
+      <Command>copy "$(ProjectDir)lib\ZXingDebug\ZXing.dll" "$(OutDir)ZXing.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include/;src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QZXing3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ZXingRelease/ZXing.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>
       </Command>
     </CustomBuildStep>
     <PostBuildEvent>
-      <Command>copy "$(ProjectDir)lib\QZXing3.dll" "$(OutDir)QZXing3.dll"</Command>
+      <Command>copy "$(ProjectDir)lib\ZXingRelease\ZXing.dll" "$(OutDir)ZXing.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
@@ -120,17 +120,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtRcc Include="QRCodeScanner.qrc" />
-    <QtUic Include="ImageCaptureWidget.ui" />
-    <QtUic Include="QRCodeScanner.ui" />
-    <QtMoc Include="QRCodeScanner.h" />
-    <ClCompile Include="ImageCaptureWidget.cpp" />
-    <ClCompile Include="QRCodeScanner.cpp" />
-    <ClCompile Include="main.cpp" />
+    <None Include="cpp.hint" />
     <None Include="QRCodeScanner.ico" />
     <ResourceCompile Include="QRCodeScanner.rc" />
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="ImageCaptureWidget.h" />
+    <QtUic Include="src\QRCodeScanner.ui" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="src\QRCodeScanner.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\QRCodeScanner.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
