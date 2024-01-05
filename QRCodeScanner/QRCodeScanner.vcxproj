@@ -120,6 +120,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtRcc Include="QRCodeScanner.qrc" />
+    <None Include="..\README.md" />
     <None Include="cpp.hint" />
     <None Include="QRCodeScanner.ico" />
     <ResourceCompile Include="QRCodeScanner.rc" />

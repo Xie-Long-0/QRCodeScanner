@@ -1,7 +1,20 @@
 #include "QRCodeScanner.h"
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#define QT5VER
+#endif
+
+#include <QCamera>
+#ifdef QT5VER
+#include <QCameraViewfinder>
+#include <QCameraInfo>
+#include <QCameraImageCapture>
+#else
 #include <QImageCapture>
 #include <QMediaCaptureSession>
 #include <QMediaDevices>
+#endif // QT5VER
+
 #include <QMessageBox>
 #include <QtConcurrent/QtConcurrent>
 #include <QTimer>
@@ -17,88 +30,51 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
 {
     ui.setupUi(this);
 
+#ifdef QT5VER
+    // Qt5需要注册该类型用于属性与信号槽
+    qRegisterMetaType<QList<QRect>>("QList<QRect>");
+#endif // QT5VER
+
     ui.startBtn->setEnabled(false);
     ui.stopBtn->setEnabled(false);
-
-    m_camera = new QCamera(this);
-
-    // 切换相机
-    connect(m_camera, &QCamera::cameraDeviceChanged, this, [=] {
-        if (m_camera->isAvailable())
-        {
-            ui.startBtn->setEnabled(true);
-            ui.statusBar->showMessage(tr("就绪"));
-        }
-        });
-
-    // 相机发生错误
-    connect(m_camera, &QCamera::errorOccurred, this, [=] {
-        // 调用停止
-        ui.stopBtn->click();
-        ui.startBtn->setEnabled(false);
-        // 显示错误
-        QMessageBox::critical(this, tr("错误"), m_camera->errorString());
-        ui.statusBar->showMessage(tr("相机发生错误"));
-        });
-
     ui.statusBar->showMessage(tr("未找到相机"));
 
-    auto mediaDevices = new QMediaDevices(this);
+    // 视频输出窗口
+    m_videoWidget = new QVideoWidget(ui.previewFrame);
+    ui.previewFrameLayout->addWidget(m_videoWidget);
+    // 图像捕获定时器
+    m_timer = new QTimer(this);
+    m_timer->setInterval(500);
 
+#ifdef QT5VER
+    connect(ui.cameraComBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &QRCodeScanner::onCameraIndexChanged);
+#else
+    m_camera = new QCamera(this);
+    // 相机状态变化
+    connect(m_camera, &QCamera::errorOccurred, this, &QRCodeScanner::onCameraErrorOccurred);
     connect(ui.cameraComBox, &QComboBox::currentIndexChanged, this, &QRCodeScanner::onCameraIndexChanged);
 
-    // 刷新相机
-    auto freshCameras = [=] {
-        auto cid = ui.cameraComBox->currentData();
-        ui.cameraComBox->clear();
-        for (auto &cameraDevice : QMediaDevices::videoInputs())
-        {
-            if (!cameraDevice.description().isEmpty())
-            {
-                ui.cameraComBox->addItem(cameraDevice.description(), cameraDevice.id());
-            }
-            else
-            {
-                ui.cameraComBox->addItem(cameraDevice.id(), cameraDevice.id());
-            }
-        }
-        if (cid.isValid())
-        {
-            ui.cameraComBox->setCurrentIndex(ui.cameraComBox->findData(cid));
-        }
-        };
+    auto mediaDevices = new QMediaDevices(this);
+    connect(mediaDevices, &QMediaDevices::videoInputsChanged, this, &QRCodeScanner::freshCameras);
 
-    connect(mediaDevices, &QMediaDevices::videoInputsChanged, this, freshCameras);
+    // 持续采集会话
+    auto capture = new QMediaCaptureSession(this);
+    capture->setCamera(m_camera);
+    capture->setVideoOutput(m_videoWidget);
+
+    // 图像捕获
+    auto imageCapture = new QImageCapture(this);
+    capture->setImageCapture(imageCapture);
+    connect(m_timer, &QTimer::timeout, imageCapture, &QImageCapture::capture);
+    connect(imageCapture, &QImageCapture::imageCaptured, this, &QRCodeScanner::recognImage);
+#endif // QT5VER
+
     freshCameras();
 
     if (ui.cameraComBox->count() > 0)
     {
         ui.cameraComBox->setCurrentIndex(0);
-        if (m_camera->isAvailable())
-        {
-            ui.startBtn->setEnabled(true);
-            ui.statusBar->showMessage(tr("就绪"));
-        }
     }
-
-    // 持续采集会话
-    auto capture = new QMediaCaptureSession(this);
-    capture->setCamera(m_camera);
-
-    // 视频输出窗口
-    auto videoWidget = new QVideoWidget(ui.previewFrame);
-    ui.previewFrameLayout->addWidget(videoWidget);
-    capture->setVideoOutput(videoWidget);
-
-    // 图像捕获
-    auto imageCapture = new QImageCapture(this);
-    capture->setImageCapture(imageCapture);
-
-    // 定时器触发捕获
-    m_timer = new QTimer(this);
-    m_timer->setInterval(500);
-    connect(m_timer, &QTimer::timeout, imageCapture, &QImageCapture::capture);
-    connect(imageCapture, &QImageCapture::imageCaptured, this, &QRCodeScanner::recognImage);
 
     // 显示结果
     connect(this, &QRCodeScanner::recognSuccess, this, &QRCodeScanner::onResultsRecieved);
@@ -138,6 +114,36 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
 
 QRCodeScanner::~QRCodeScanner()
 {
+}
+
+void QRCodeScanner::freshCameras()
+{
+    auto cid = ui.cameraComBox->currentData();
+    ui.cameraComBox->clear();
+
+#ifdef QT5VER
+    auto mediaDevices = QCameraInfo::availableCameras();
+    for (auto &cameraDevice : mediaDevices)
+    {
+        auto id = cameraDevice.deviceName();
+#else
+    for (auto &cameraDevice : QMediaDevices::videoInputs())
+    {
+        auto id = cameraDevice.id();
+#endif // QT5VER
+        if (!cameraDevice.description().isEmpty())
+        {
+            ui.cameraComBox->addItem(cameraDevice.description(), id);
+        }
+        else
+        {
+            ui.cameraComBox->addItem(id, id);
+        }
+    }
+    if (cid.isValid())
+    {
+        ui.cameraComBox->setCurrentIndex(ui.cameraComBox->findData(cid));
+    }
 }
 
 void QRCodeScanner::recognImage(int id, const QImage &img)
@@ -201,18 +207,69 @@ void QRCodeScanner::recognImage(int id, const QImage &img)
 // 相机选择
 void QRCodeScanner::onCameraIndexChanged(int index)
 {
-    m_camera->stop();
+    if (m_camera)
+        m_camera->stop();
     ui.startBtn->setEnabled(false);
     ui.stopBtn->setEnabled(false);
+
+#ifdef QT5VER
+    auto devices = QCameraInfo::availableCameras();
+    for (auto &d : devices)
+    {
+        if (d.deviceName() == ui.cameraComBox->currentData().toString())
+        {
+            if (m_camera)
+                m_camera->deleteLater();
+            m_camera = new QCamera(d, this);
+            // 相机就绪
+            if (m_camera->isAvailable())
+            {
+                ui.startBtn->setEnabled(true);
+                ui.statusBar->showMessage(tr("就绪"));
+            }
+            // 相机发生错误
+            connect(m_camera, &QCamera::errorOccurred, this, &QRCodeScanner::onCameraErrorOccurred);
+            // 设置相机流输出
+            m_camera->setViewfinder(m_videoWidget);
+            m_camera->setCaptureMode(QCamera::CaptureStillImage);
+            // 图像捕获
+            auto imageCapture = new QCameraImageCapture(m_camera, this);
+            connect(m_timer, &QTimer::timeout, imageCapture, [=] {
+                m_camera->searchAndLock();
+                imageCapture->capture();
+                m_camera->unlock();
+                });
+            connect(imageCapture, &QCameraImageCapture::imageCaptured, this, &QRCodeScanner::recognImage);
+            connect(m_camera, &QCamera::destroyed, imageCapture, &QCameraImageCapture::deleteLater);
+            break;
+        }
+    }
+#else
     auto devices = QMediaDevices::videoInputs();
     for (auto &d : devices)
     {
         if (d.id() == ui.cameraComBox->currentData().toByteArray())
         {
             m_camera->setCameraDevice(d);
+            if (m_camera->isAvailable())
+            {
+                ui.startBtn->setEnabled(true);
+                ui.statusBar->showMessage(tr("就绪"));
+            }
             break;
         }
     }
+#endif // QT5VER
+}
+
+void QRCodeScanner::onCameraErrorOccurred()
+{
+    // 调用停止
+    ui.stopBtn->click();
+    ui.startBtn->setEnabled(false);
+    // 显示错误
+    QMessageBox::critical(this, tr("错误"), m_camera->errorString());
+    ui.statusBar->showMessage(tr("相机发生错误"));
 }
 
 void QRCodeScanner::onResultsRecieved(const QStringList &texts, const QStringList &types)
@@ -229,7 +286,7 @@ void QRCodeScanner::onResultsRecieved(const QStringList &texts, const QStringLis
     ui.historyBrowser->append(QDateTime::currentDateTime().toString("[yyyy-MM-dd hh:mm:ss]\n"));
 }
 
-void QRCodeScanner::onResultsOutline(const QImage &img, const QList<QRect> &rects)
+void QRCodeScanner::onResultsOutline(const QImage &img, const QList<QRect> &rects) const
 {
     QImage rsimg = img;
     QPainter p(&rsimg);

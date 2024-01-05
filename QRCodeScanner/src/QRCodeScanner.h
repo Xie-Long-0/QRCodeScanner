@@ -2,8 +2,10 @@
 
 #include <QtWidgets/QMainWindow>
 #include "ui_QRCodeScanner.h"
-#include <QCamera>
 #include <QTimer>
+
+class QCamera;
+class QVideoWidget;
 
 class QRCodeScanner : public QMainWindow
 {
@@ -19,12 +21,14 @@ signals:
     void windowClosed();
 
 public slots:
+    void freshCameras();
     void recognImage(int id, const QImage &img);
 
 protected slots:
     void onCameraIndexChanged(int index);
+    void onCameraErrorOccurred();
     void onResultsRecieved(const QStringList &texts, const QStringList &types);
-    void onResultsOutline(const QImage &img, const QList<QRect> &rects);
+    void onResultsOutline(const QImage &img, const QList<QRect> &rects) const;
 
 protected:
     void closeEvent(QCloseEvent *e) override;
@@ -32,5 +36,6 @@ protected:
 private:
     Ui::QRCodeScannerClass ui;
     QCamera *m_camera = nullptr;
+    QVideoWidget *m_videoWidget = nullptr;
     QTimer *m_timer = nullptr;
 };
