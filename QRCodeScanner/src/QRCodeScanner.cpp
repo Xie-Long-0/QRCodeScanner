@@ -234,6 +234,8 @@ void QRCodeScanner::onCameraIndexChanged(int index)
             m_camera->setCaptureMode(QCamera::CaptureStillImage);
             // 图像捕获
             auto imageCapture = new QCameraImageCapture(m_camera, this);
+            // 图像不保存到文件
+            imageCapture->setCaptureDestination(QCameraImageCapture::CaptureToBuffer);
             connect(m_timer, &QTimer::timeout, imageCapture, [=] {
                 m_camera->searchAndLock();
                 imageCapture->capture();
