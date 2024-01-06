@@ -23,6 +23,7 @@ signals:
 public slots:
     void freshCameras();
     void recognImage(int id, const QImage &img);
+    void saveResultToFile();
 
 protected slots:
     void onCameraIndexChanged(int index);

@@ -21,6 +21,7 @@
 #include <QtMultimediaWidgets/QVideoWidget>
 #include <QPainter>
 #include <QPainterPath>
+#include <QFileDialog>
 
 #include "ZXing/ReadBarcode.h"
 #include "ZXing/ZXingQtReader.h"
@@ -87,12 +88,7 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
     // 菜单->关闭
     connect(ui.action_quit, &QAction::triggered, this, &QMainWindow::close);
     // 菜单->保存
-    connect(ui.action_save, &QAction::triggered, this, [=] {
-        // TODO
-        //auto fileName = QFileDialog::getSaveFileName(this, tr("保存文本"),
-        //QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
-        //tr("文本文档 (*.txt)"));
-        });
+    connect(ui.action_save, &QAction::triggered, this, &QRCodeScanner::saveResultToFile);
 
     // 开始按钮
     connect(ui.startBtn, &QPushButton::clicked, this, [=] {
@@ -202,6 +198,34 @@ void QRCodeScanner::recognImage(int id, const QImage &img)
         };
     // 运行识别任务
     QtConcurrent::run(task);
+}
+
+void QRCodeScanner::saveResultToFile()
+{
+    auto text = ui.historyBrowser->toPlainText();
+    if (text.isEmpty())
+    {
+        QMessageBox::warning(this, tr("警告"), tr("识别结果为空！"));
+        return;
+    }
+
+    auto fileName = QFileDialog::getSaveFileName(this, tr("保存文本"),
+        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
+        + QDateTime::currentDateTime().toString("'/Results-'ddhhmmss'.txt'"),
+        tr("文本文档 (*.txt);;所有文件 (*.*)"));
+
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::critical(this, tr("错误"), tr("文件创建失败：%1").arg(file.errorString()));
+        return;
+    }
+    file.write(text.toUtf8());
+    file.close();
+    ui.statusBar->showMessage(tr("文件保存成功"));
 }
 
 // 相机选择
