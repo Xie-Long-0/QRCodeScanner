@@ -17,7 +17,7 @@ public:
 
 signals:
     void recognSuccess(const QStringList &texts, const QStringList &types);
-    void recognOutline(const QImage &img, const QList<QRect> &rects);
+    void recognOutline(const QImage &img, const QList<QPolygon> &rects);
     void windowClosed();
 
 public slots:
@@ -29,7 +29,7 @@ protected slots:
     void onCameraIndexChanged(int index);
     void onCameraErrorOccurred();
     void onResultsRecieved(const QStringList &texts, const QStringList &types);
-    void onResultsOutline(const QImage &img, const QList<QRect> &rects) const;
+    void onResultsOutline(const QImage &img, const QList<QPolygon> &rects) const;
 
 protected:
     void closeEvent(QCloseEvent *e) override;

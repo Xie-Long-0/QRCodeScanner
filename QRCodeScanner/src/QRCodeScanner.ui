@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>400</height>
+    <width>837</width>
+    <height>459</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,6 +48,84 @@
     </item>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QGroupBox" name="groupBox">
+        <property name="title">
+         <string>扫描参数设置</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QCheckBox" name="linearCodesBox">
+             <property name="toolTip">
+              <string>LinearCodes</string>
+             </property>
+             <property name="text">
+              <string>一维码</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="matrixCodesBox">
+             <property name="toolTip">
+              <string>MatrixCodes</string>
+             </property>
+             <property name="text">
+              <string>二维码</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="tryHarderBox">
+           <property name="toolTip">
+            <string>tryHarder</string>
+           </property>
+           <property name="text">
+            <string>尝试深度扫描</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="tryRotateBox">
+           <property name="toolTip">
+            <string>tryRotate</string>
+           </property>
+           <property name="text">
+            <string>尝试旋转图像</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="tryInvertBox">
+           <property name="toolTip">
+            <string>tryInvert</string>
+           </property>
+           <property name="text">
+            <string>尝试倒置</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
       <item>
        <widget class="QLabel" name="label_2">
         <property name="text">
@@ -95,7 +173,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>600</width>
+     <width>837</width>
      <height>22</height>
     </rect>
    </property>

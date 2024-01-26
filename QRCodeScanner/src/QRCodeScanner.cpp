@@ -45,7 +45,14 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
     ui.previewFrameLayout->addWidget(m_videoWidget);
     // 图像捕获定时器
     m_timer = new QTimer(this);
-    m_timer->setInterval(500);
+    m_timer->setInterval(300);
+    // 注意：启用深度识别时用时将会显著增加，需要控制定时器采集间隔
+    connect(ui.tryHarderBox, &QCheckBox::stateChanged, this, [=](int state) {
+        if (state != 0)
+            m_timer->setInterval(1500);
+        else
+            m_timer->setInterval(300);
+        });
 
 #ifdef QT5VER
     connect(ui.cameraComBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &QRCodeScanner::onCameraIndexChanged);
@@ -151,14 +158,19 @@ void QRCodeScanner::recognImage(int id, const QImage &img)
     using namespace ZXingQt;
 
     auto task = [=] {
+        BarcodeFormats format = BarcodeFormat::None;
+        if (ui.linearCodesBox->isChecked())
+            format |= BarcodeFormat::LinearCodes;
+        if (ui.matrixCodesBox->isChecked())
+            format |= BarcodeFormat::MatrixCodes;
 
         // ZXing参数
         auto &&options = ReaderOptions()
             // 识别的格式，Any = LinearCodes | MatrixCodes
-            .setFormats(BarcodeFormat::Any)
-            .setTryHarder(false)
-            .setTryRotate(true)
-            .setTryInvert(true)
+            .setFormats(format)
+            .setTryHarder(ui.tryHarderBox->isChecked())
+            .setTryRotate(ui.tryRotateBox->isChecked())
+            .setTryInvert(ui.tryInvertBox->isChecked())
             .setTextMode(TextMode::HRI)
             .setMaxNumberOfSymbols(5);
 
@@ -167,26 +179,26 @@ void QRCodeScanner::recognImage(int id, const QImage &img)
 
         QStringList texts;
         QStringList types;
-        QList<QRect> rects;
+        QList<QPolygon> rects;
 
         for (auto &result : results)
         {
             auto &&pos = result.position();
-            int tlx = std::min({ pos[0].x(), pos[1].x(), pos[2].x(), pos[3].x() });
-            int tly = std::min({ pos[0].y(), pos[1].y(), pos[2].y(), pos[3].y() });
-            int brx = std::max({ pos[0].x(), pos[1].x(), pos[2].x(), pos[3].x() });
-            int bry = std::max({ pos[0].y(), pos[1].y(), pos[2].y(), pos[3].y() });
-            QRect rect(QPoint(tlx, tly), QPoint(brx, bry));
+            QPolygon polygon;
+            polygon.append(pos[0]);
+            polygon.append(pos[1]);
+            polygon.append(pos[2]);
+            polygon.append(pos[3]);
 
             qDebug() << "Text:    " << result.text();
             qDebug() << "Format:  " << result.formatName();
             qDebug() << "Content: " << result.contentTypeName();
-            qDebug() << "Position:" << pos[0] << pos[1] << pos[2] << pos[3] << rect << Qt::endl;
+            qDebug() << "Position:" << pos[0] << pos[1] << pos[2] << pos[3] << Qt::endl;
 
             // 保存结果
             texts += result.text();
             types += result.formatName();
-            rects += rect;
+            rects += polygon;
         }
 
         if (!texts.isEmpty())
@@ -312,17 +324,18 @@ void QRCodeScanner::onResultsRecieved(const QStringList &texts, const QStringLis
     ui.historyBrowser->append(QDateTime::currentDateTime().toString("[yyyy-MM-dd hh:mm:ss]\n"));
 }
 
-void QRCodeScanner::onResultsOutline(const QImage &img, const QList<QRect> &rects) const
+void QRCodeScanner::onResultsOutline(const QImage &img, const QList<QPolygon> &rects) const
 {
     QImage rsimg = img;
     QPainter p(&rsimg);
+    p.setRenderHint(QPainter::Antialiasing);
 
     QPainterPath pp;
     pp.addRect(rsimg.rect());
 
     QFont font = qApp->font();
-    font.setPointSizeF(20);
-    font.setBold(true);
+    font.setPointSizeF(24);
+    //font.setBold(true);
     p.setFont(font);
     p.setPen(QPen(Qt::cyan, 5));
     p.setRenderHint(QPainter::TextAntialiasing);
@@ -331,9 +344,9 @@ void QRCodeScanner::onResultsOutline(const QImage &img, const QList<QRect> &rect
     for (int i = 0; i < rects.size(); i++)
     {
         auto &r = rects[i];
-        pp.addRect(r);
-        p.drawRect(r);
-        p.drawText(r.center(), QString("[%1]").arg(i + 1));
+        pp.addPolygon(r);
+        p.drawPolygon(r);
+        p.drawText((r.at(0) + r.at(2)) * 0.5, QString("[ %1 ]").arg(i + 1));
     }
     p.fillPath(pp, QColor(0, 0, 0, 128));
     p.end();
@@ -346,6 +359,7 @@ void QRCodeScanner::onResultsOutline(const QImage &img, const QList<QRect> &rect
     label->setAlignment(Qt::AlignCenter);
     label->setScaledContents(true);
     connect(this, &QRCodeScanner::windowClosed, label, &QWidget::deleteLater);
+    label->move(x() + width(), y());
     label->show();
 }
 
