@@ -1,4 +1,5 @@
 <RCC>
-    <qresource prefix="QRCodeScanner">
+    <qresource prefix="/">
+        <file alias="logo">QRCodeScanner.ico</file>
     </qresource>
 </RCC>

@@ -126,14 +126,23 @@
     <ResourceCompile Include="QRCodeScanner.rc" />
   </ItemGroup>
   <ItemGroup>
+    <QtUic Include="src\QRCodeGenerator.ui" />
     <QtUic Include="src\QRCodeScanner.ui" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="src\QRCodeScanner.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\ImageView.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\QRCodeGenerator.cpp" />
     <ClCompile Include="src\QRCodeScanner.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="src\QRCodeGenerator.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="src\ImageView.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

@@ -6,6 +6,7 @@
 
 class QCamera;
 class QVideoWidget;
+class QRCodeGenerator;
 
 class QRCodeScanner : public QMainWindow
 {
@@ -24,6 +25,7 @@ public slots:
     void freshCameras();
     void recognImage(int id, const QImage &img);
     void saveResultToFile();
+    void openQRGeneratorWidget();
 
 protected slots:
     void onCameraIndexChanged(int index);
@@ -39,4 +41,5 @@ private:
     QCamera *m_camera = nullptr;
     QVideoWidget *m_videoWidget = nullptr;
     QTimer *m_timer = nullptr;
+    QRCodeGenerator *m_qrgWidget = nullptr;
 };

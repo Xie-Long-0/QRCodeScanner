@@ -26,6 +26,8 @@
 #include "ZXing/ReadBarcode.h"
 #include "ZXing/ZXingQtReader.h"
 
+#include "QRCodeGenerator.h"
+
 QRCodeScanner::QRCodeScanner(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -96,6 +98,8 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
     connect(ui.action_quit, &QAction::triggered, this, &QMainWindow::close);
     // 菜单->保存
     connect(ui.action_save, &QAction::triggered, this, &QRCodeScanner::saveResultToFile);
+    // 菜单->打开QR生成器
+    connect(ui.action_openQRG, &QAction::triggered, this, &QRCodeScanner::openQRGeneratorWidget);
 
     // 开始按钮
     connect(ui.startBtn, &QPushButton::clicked, this, [=] {
@@ -117,6 +121,8 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
 
 QRCodeScanner::~QRCodeScanner()
 {
+    if (m_qrgWidget)
+        m_qrgWidget->deleteLater();
 }
 
 void QRCodeScanner::freshCameras()
@@ -190,10 +196,12 @@ void QRCodeScanner::recognImage(int id, const QImage &img)
             polygon.append(pos[2]);
             polygon.append(pos[3]);
 
+#ifdef QT_DEBUG
             qDebug() << "Text:    " << result.text();
             qDebug() << "Format:  " << result.formatName();
             qDebug() << "Content: " << result.contentTypeName();
             qDebug() << "Position:" << pos[0] << pos[1] << pos[2] << pos[3] << Qt::endl;
+#endif // QT_DEBUG
 
             // 保存结果
             texts += result.text();
@@ -238,6 +246,16 @@ void QRCodeScanner::saveResultToFile()
     file.write(text.toUtf8());
     file.close();
     ui.statusBar->showMessage(tr("文件保存成功"));
+}
+
+void QRCodeScanner::openQRGeneratorWidget()
+{
+    if (m_qrgWidget == nullptr)
+    {
+        m_qrgWidget = new QRCodeGenerator();
+    }
+    m_qrgWidget->activateWindow();
+    m_qrgWidget->show();
 }
 
 // 相机选择
