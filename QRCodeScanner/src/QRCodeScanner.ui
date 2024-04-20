@@ -21,27 +21,51 @@
        <widget class="QComboBox" name="cameraComBox"/>
       </item>
       <item>
-       <widget class="QFrame" name="previewFrame">
+       <widget class="QStackedWidget" name="stackedWidget">
         <property name="frameShape">
          <enum>QFrame::Box</enum>
         </property>
-        <layout class="QVBoxLayout" name="previewFrameLayout">
-         <property name="spacing">
-          <number>0</number>
-         </property>
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-        </layout>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="previewWidget" native="true">
+         <layout class="QVBoxLayout" name="previewFrameLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="previewImageWidget">
+         <layout class="QVBoxLayout" name="previewImageLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>
@@ -181,6 +205,7 @@
     <property name="title">
      <string>文件(&amp;F)</string>
     </property>
+    <addaction name="action_open"/>
     <addaction name="action_save"/>
     <addaction name="action_openQRG"/>
     <addaction name="action_quit"/>
@@ -194,11 +219,6 @@
    </property>
    <property name="menuRole">
     <enum>QAction::QuitRole</enum>
-   </property>
-  </action>
-  <action name="action">
-   <property name="text">
-    <string>save</string>
    </property>
   </action>
   <action name="action_save">

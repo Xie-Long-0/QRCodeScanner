@@ -27,6 +27,7 @@
 #include "ZXing/ZXingQtReader.h"
 
 #include "QRCodeGenerator.h"
+#include "ImageView.h"
 
 QRCodeScanner::QRCodeScanner(QWidget *parent)
     : QMainWindow(parent)
@@ -35,15 +36,20 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
 
 #ifdef QT5VER
     // Qt5需要注册该类型用于属性与信号槽
-    qRegisterMetaType<QList<QRect>>("QList<QRect>");
+    qRegisterMetaType<QList<QPolygon>>("QList<QPolygon>");
 #endif // QT5VER
 
     ui.startBtn->setEnabled(false);
     ui.stopBtn->setEnabled(false);
     ui.statusBar->showMessage(tr("未找到相机"));
 
+    // 使用StackedWidget切换显示视频与图片控件
+    m_viewer = new ImageView(ui.previewImageWidget);
+    ui.previewImageLayout->addWidget(m_viewer);
+    ui.stackedWidget->setCurrentIndex(0);
+
     // 视频输出窗口
-    m_videoWidget = new QVideoWidget(ui.previewFrame);
+    m_videoWidget = new QVideoWidget(ui.previewWidget);
     ui.previewFrameLayout->addWidget(m_videoWidget);
     // 图像捕获定时器
     m_timer = new QTimer(this);
@@ -89,6 +95,9 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
     // 显示结果
     connect(this, &QRCodeScanner::recognSuccess, this, &QRCodeScanner::onResultsRecieved);
     connect(this, &QRCodeScanner::recognOutline, this, &QRCodeScanner::onResultsOutline);
+    connect(this, &QRCodeScanner::recognFailed, this, [=] {
+        QMessageBox::warning(this, tr("提示"), tr("图片未识别到一维/二维码。"));
+        });
 
     // TODO
     //auto fpsLabel = new QLabel("FPS: 0", this);
@@ -96,13 +105,16 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
 
     // 菜单->关闭
     connect(ui.action_quit, &QAction::triggered, this, &QMainWindow::close);
-    // 菜单->保存
+    // 菜单->打开图片
+    connect(ui.action_open, &QAction::triggered, this, &QRCodeScanner::openImageFile);
+    // 菜单->保存结果
     connect(ui.action_save, &QAction::triggered, this, &QRCodeScanner::saveResultToFile);
     // 菜单->打开QR生成器
     connect(ui.action_openQRG, &QAction::triggered, this, &QRCodeScanner::openQRGeneratorWidget);
 
     // 开始按钮
     connect(ui.startBtn, &QPushButton::clicked, this, [=] {
+        ui.stackedWidget->setCurrentIndex(0);
         m_camera->start();
         ui.startBtn->setEnabled(false);
         ui.stopBtn->setEnabled(true);
@@ -215,6 +227,10 @@ void QRCodeScanner::recognImage(int id, const QImage &img)
             emit recognSuccess(texts, types);
             emit recognOutline(img, rects);
         }
+        else if (ui.stackedWidget->currentIndex() == 1)
+        {
+            emit recognFailed();
+        }
         };
     // 运行识别任务
     QtConcurrent::run(task);
@@ -256,6 +272,32 @@ void QRCodeScanner::openQRGeneratorWidget()
     }
     m_qrgWidget->activateWindow();
     m_qrgWidget->show();
+}
+
+void QRCodeScanner::openImageFile()
+{
+    if (ui.stopBtn->isEnabled())
+        ui.stopBtn->click();
+
+    static bool open_last = false;
+    QString path;
+    if (!open_last)
+        path = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+
+    QString fileName = QFileDialog::getOpenFileName(this, tr("打开图片"), path, "图片 (*.jpg *.png *.bmp *.jpeg *.webp);; 所有文件 (*.*)");
+    if (!fileName.isEmpty())
+    {
+        open_last = true;
+        QImage img(fileName);
+        if (img.isNull())
+        {
+            QMessageBox::critical(this, tr("错误"), tr("图片文件无效：%1").arg(fileName));
+            return;
+        }
+        m_viewer->setImage(img);
+        ui.stackedWidget->setCurrentIndex(1);
+        recognImage(0, img);
+    }
 }
 
 // 相机选择
@@ -369,20 +411,7 @@ void QRCodeScanner::onResultsOutline(const QImage &img, const QList<QPolygon> &r
     p.fillPath(pp, QColor(0, 0, 0, 128));
     p.end();
 
-    // 新窗口显示图片
-    auto *label = new QLabel();
-    label->setWindowTitle(tr("识别结果"));
-    label->resize(720, 400);
-    label->setPixmap(QPixmap::fromImage(rsimg));
-    label->setAlignment(Qt::AlignCenter);
-    label->setScaledContents(true);
-    connect(this, &QRCodeScanner::windowClosed, label, &QWidget::deleteLater);
-    label->move(x() + width(), y());
-    label->show();
-}
-
-void QRCodeScanner::closeEvent(QCloseEvent *e)
-{
-    QMainWindow::closeEvent(e);
-    emit windowClosed();
+    // 显示图片
+    m_viewer->setImage(rsimg);
+    ui.stackedWidget->setCurrentIndex(1);
 }

@@ -7,6 +7,7 @@
 class QCamera;
 class QVideoWidget;
 class QRCodeGenerator;
+class ImageView;
 
 class QRCodeScanner : public QMainWindow
 {
@@ -19,13 +20,14 @@ public:
 signals:
     void recognSuccess(const QStringList &texts, const QStringList &types);
     void recognOutline(const QImage &img, const QList<QPolygon> &rects);
-    void windowClosed();
+    void recognFailed();
 
 public slots:
     void freshCameras();
     void recognImage(int id, const QImage &img);
     void saveResultToFile();
     void openQRGeneratorWidget();
+    void openImageFile();
 
 protected slots:
     void onCameraIndexChanged(int index);
@@ -33,13 +35,11 @@ protected slots:
     void onResultsRecieved(const QStringList &texts, const QStringList &types);
     void onResultsOutline(const QImage &img, const QList<QPolygon> &rects) const;
 
-protected:
-    void closeEvent(QCloseEvent *e) override;
-
 private:
     Ui::QRCodeScannerClass ui;
     QCamera *m_camera = nullptr;
     QVideoWidget *m_videoWidget = nullptr;
     QTimer *m_timer = nullptr;
     QRCodeGenerator *m_qrgWidget = nullptr;
+    ImageView *m_viewer = nullptr;
 };
