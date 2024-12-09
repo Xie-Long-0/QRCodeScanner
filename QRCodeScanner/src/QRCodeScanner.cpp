@@ -284,14 +284,14 @@ void QRCodeScanner::openImageFile()
     if (!open_last)
         path = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
 
-    QString fileName = QFileDialog::getOpenFileName(this, tr("打开图片"), path, "图片 (*.jpg *.png *.bmp *.jpeg *.webp);; 所有文件 (*.*)");
-    if (!fileName.isEmpty())
+    auto fileNames = QFileDialog::getOpenFileNames(this, tr("选择图片"), path, "图片 (*.jpg *.png *.bmp *.jpeg *.webp);; 所有文件 (*.*)");
+    for (auto &file : fileNames)
     {
         open_last = true;
-        QImage img(fileName);
+        QImage img(file);
         if (img.isNull())
         {
-            QMessageBox::critical(this, tr("错误"), tr("图片文件无效：%1").arg(fileName));
+            QMessageBox::critical(this, tr("错误"), tr("图片文件无效：%1").arg(file));
             return;
         }
         m_viewer->setImage(img);
