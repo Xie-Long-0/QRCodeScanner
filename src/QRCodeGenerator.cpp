@@ -3,9 +3,7 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 
-#include "ZXing/MultiFormatWriter.h"
-#include "ZXing/BitMatrix.h"
-#include "ZXing/Matrix.h"
+#include "ZXing/WriteBarcode.h"
 #include "ImageView.h"
 
 QRCodeGenerator::QRCodeGenerator(QWidget *parent)
@@ -20,10 +18,13 @@ QRCodeGenerator::QRCodeGenerator(QWidget *parent)
     layout->addWidget(m_viewer);
     ui.viewWidget->setLayout(layout);
 
+    ui.typeComboBox->addItem(tr("二维码 (MicroQRCode)"), (int)ZXing::BarcodeFormat::MicroQRCode);
     ui.typeComboBox->addItem(tr("二维码 (QRCode)"), (int)ZXing::BarcodeFormat::QRCode);
+    ui.typeComboBox->addItem(tr("二维码 (RMQRCode)"), (int)ZXing::BarcodeFormat::RMQRCode);
     ui.typeComboBox->addItem(tr("二维码 (DataMatrix)"), (int)ZXing::BarcodeFormat::DataMatrix);
     ui.typeComboBox->addItem(tr("二维码 (PDF417)"), (int)ZXing::BarcodeFormat::PDF417);
     ui.typeComboBox->addItem(tr("二维码 (Aztec)"), (int)ZXing::BarcodeFormat::Aztec);
+    ui.typeComboBox->addItem(tr("二维码 (MaxiCode)"), (int)ZXing::BarcodeFormat::MaxiCode);
 
     ui.typeComboBox->addItem(tr("条形码 (Code128)"), (int)ZXing::BarcodeFormat::Code128);
     ui.typeComboBox->addItem(tr("条形码 (EAN8)"), (int)ZXing::BarcodeFormat::EAN8);
@@ -35,11 +36,6 @@ QRCodeGenerator::QRCodeGenerator(QWidget *parent)
     ui.typeComboBox->addItem(tr("条形码 (UPCA)"), (int)ZXing::BarcodeFormat::UPCA);
     ui.typeComboBox->addItem(tr("条形码 (UPCE)"), (int)ZXing::BarcodeFormat::UPCE);
     ui.typeComboBox->setCurrentIndex(0);
-
-    ui.encodingComboBox->addItem("ASCII", (int)ZXing::CharacterSet::ASCII);
-    ui.encodingComboBox->addItem("UTF-8", (int)ZXing::CharacterSet::UTF8);
-    ui.encodingComboBox->addItem("GB2312(GBK)", (int)ZXing::CharacterSet::GB2312);
-    ui.encodingComboBox->setCurrentIndex(0);
 
     ui.rotateComboBox->addItem(tr("不旋转"), 0);
     ui.rotateComboBox->addItem(tr("旋转90度"), 90);
@@ -64,32 +60,28 @@ void QRCodeGenerator::onGenerateBtnClicked()
     }
 
     int width = ui.widthSpinBox->value();
-    int height = ui.heightSpinBox->value();
-    int margin = ui.marginSpinBox->value();
 
-    ZXing::BitMatrix bitMatrix;
+    auto format = ZXing::BarcodeFormat(ui.typeComboBox->currentData().toInt());
+    std::string ecl = ZXing::BarcodeFormats(ZXing::BarcodeFormat::LinearCodes).testFlag(format) ?
+        "" : ui.eccLevelComboBox->currentText().toStdString();
+
+    auto crtOpt = ZXing::CreatorOptions(format).ecLevel(ecl);
+    auto wrtOpt = ZXing::WriterOptions().rotate(ui.rotateComboBox->currentData().toInt())
+        .sizeHint(width).withHRT(true);
+
     try
     {
-        ZXing::MultiFormatWriter writer(ZXing::BarcodeFormat(ui.typeComboBox->currentData().toInt()));
-        writer.setEncoding(ZXing::CharacterSet(ui.encodingComboBox->currentData().toInt()));
-        writer.setEccLevel(ui.eccLevelComboBox->currentIndex());
-        writer.setMargin(margin);
-
-        auto str = content.toStdString();
-        bitMatrix = writer.encode(str, width, height);
+        auto barcode = ZXing::CreateBarcodeFromText(content.toStdString(), crtOpt);
+        auto result = ZXing::WriteBarcodeToImage(barcode, wrtOpt);
+        QImage img(result.data(), result.width(), result.height(), result.width(), QImage::Format_Grayscale8);
+        m_qrImg = img.copy();
+        m_viewer->setImage(m_qrImg);
     }
     catch (const std::invalid_argument &e)
     {
         QMessageBox::critical(this, tr("错误"), tr("生成失败！\n输入的内容不符合该编码生成限制。\n%1").arg(e.what()));
         return;
     }
-
-    // 需要转换为uint8(unsigned char)类型的数据才可使用
-    auto result = ZXing::ToMatrix<uint8_t>(bitMatrix);
-
-    QImage img(result.data(), result.width(), result.height(), result.width(), QImage::Format_Grayscale8);
-    m_qrImg = img.copy().transformed(QTransform().rotate(ui.rotateComboBox->currentData().toInt()));
-    m_viewer->setImage(m_qrImg);
 }
 
 void QRCodeGenerator::onSaveImgBtnClicked()

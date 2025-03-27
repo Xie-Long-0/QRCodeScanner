@@ -55,7 +55,11 @@ QRCodeScanner::QRCodeScanner(QWidget *parent)
     m_timer = new QTimer(this);
     m_timer->setInterval(300);
     // 注意：启用深度识别时用时将会显著增加，需要控制定时器采集间隔
+#if QT_VERSION < QT_VERSION_CHECK(6, 7, 0)
     connect(ui.tryHarderBox, &QCheckBox::stateChanged, this, [=](int state) {
+#else
+    connect(ui.tryHarderBox, &QCheckBox::checkStateChanged, this, [=](Qt::CheckState state) {
+#endif
         if (state != 0)
             m_timer->setInterval(1500);
         else
@@ -172,8 +176,6 @@ void QRCodeScanner::recognImage(int id, const QImage & img)
     if (img.isNull())
         return;
 
-    //using namespace ZXing;
-    //using namespace ZXingQt;
     using ZXing::BarcodeFormat;
 
     auto task = [=] {
@@ -194,14 +196,12 @@ void QRCodeScanner::recognImage(int id, const QImage & img)
             .setTryRotate(ui.tryRotateBox->isChecked())
             .setTryInvert(ui.tryInvertBox->isChecked())
             .setTextMode(ZXing::TextMode::HRI)
-            .setCharacterSet(ZXing::CharacterSet::ASCII)
             .setMaxNumberOfSymbols(5);
 
         QStringList texts;
         QStringList types;
         QList<QPolygon> rects;
 
-        //ZXing::ImageView image((const uint8_t *)img.constBits(), img.width(), img.height(), ZXing::ImageFormat::RGB);
         try
         {
             // 调用ZXing接口
@@ -211,10 +211,6 @@ void QRCodeScanner::recognImage(int id, const QImage & img)
             {
                 auto &pos = result.position();
                 QPolygon polygon;
-                //polygon.append({ pos[0].x, pos[0].y });
-                //polygon.append({ pos[1].x, pos[1].y });
-                //polygon.append({ pos[2].x, pos[2].y });
-                //polygon.append({ pos[3].x, pos[3].y });
                 polygon.append(pos[0]);
                 polygon.append(pos[1]);
                 polygon.append(pos[2]);
@@ -222,8 +218,8 @@ void QRCodeScanner::recognImage(int id, const QImage & img)
 
 #ifdef QT_DEBUG
                 qDebug() << "Text:    " << result.text();
-                //qDebug() << "Format:  " << ZXing::ToString(result.format());
-                //qDebug() << "Content: " << ZXing::ToString(result.contentType());
+                qDebug() << "Format:  " << ZXing::ToString(result.format());
+                qDebug() << "Content: " << ZXing::ToString(result.contentType());
                 qDebug() << "Position:" << polygon << Qt::endl;
 #endif // QT_DEBUG
 
