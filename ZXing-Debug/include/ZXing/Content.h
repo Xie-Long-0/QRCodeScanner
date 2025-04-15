@@ -8,8 +8,13 @@
 #include "ByteArray.h"
 #include "CharacterSet.h"
 #include "ReaderOptions.h"
+#include "ZXAlgorithms.h"
 
+#if __has_include(<span>) // c++20
+#include <span>
+#endif
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace ZXing {
@@ -28,7 +33,8 @@ struct SymbologyIdentifier
 
 	std::string toString(bool hasECI = false) const
 	{
-		return code ? ']' + std::string(1, code) + static_cast<char>(modifier + eciModifierOffset * hasECI) : std::string();
+		int modVal = (modifier >= 'A' ? modifier - 'A' + 10 : modifier - '0') + eciModifierOffset * hasECI;
+		return code ? ']' + std::string(1, code) + static_cast<char>((modVal >= 10 ? 'A' - 10 : '0') + modVal) : std::string();
 	}
 };
 
@@ -62,15 +68,18 @@ public:
 	void reserve(int count) { bytes.reserve(bytes.size() + count); }
 
 	void push_back(uint8_t val) { bytes.push_back(val); }
-	void append(const std::string& str) { bytes.insert(bytes.end(), str.begin(), str.end()); }
+	void push_back(int val) { bytes.push_back(narrow_cast<uint8_t>(val)); }
+	void append(std::string_view str) { bytes.insert(bytes.end(), str.begin(), str.end()); }
+#ifdef __cpp_lib_span
+	void append(std::span<const uint8_t> ba) { bytes.insert(bytes.end(), ba.begin(), ba.end()); }
+#else
 	void append(const ByteArray& ba) { bytes.insert(bytes.end(), ba.begin(), ba.end()); }
+	void append(std::basic_string_view<uint8_t> ba) { bytes.insert(bytes.end(), ba.begin(), ba.end()); }
+#endif
 	void append(const Content& other);
 
-	void operator+=(char val) { push_back(val); }
-	void operator+=(const std::string& str) { append(str); }
-
 	void erase(int pos, int n);
-	void insert(int pos, const std::string& str);
+	void insert(int pos, std::string_view str);
 
 	bool empty() const { return bytes.empty(); }
 	bool canProcess() const;
