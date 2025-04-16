@@ -18,8 +18,8 @@ QRCodeGenerator::QRCodeGenerator(QWidget *parent)
     layout->addWidget(m_viewer);
     ui.viewWidget->setLayout(layout);
 
-    ui.typeComboBox->addItem(tr("二维码 (MicroQRCode)"), (int)ZXing::BarcodeFormat::MicroQRCode);
     ui.typeComboBox->addItem(tr("二维码 (QRCode)"), (int)ZXing::BarcodeFormat::QRCode);
+    ui.typeComboBox->addItem(tr("二维码 (MicroQRCode)"), (int)ZXing::BarcodeFormat::MicroQRCode);
     ui.typeComboBox->addItem(tr("二维码 (RMQRCode)"), (int)ZXing::BarcodeFormat::RMQRCode);
     ui.typeComboBox->addItem(tr("二维码 (DataMatrix)"), (int)ZXing::BarcodeFormat::DataMatrix);
     ui.typeComboBox->addItem(tr("二维码 (PDF417)"), (int)ZXing::BarcodeFormat::PDF417);
@@ -37,6 +37,17 @@ QRCodeGenerator::QRCodeGenerator(QWidget *parent)
     ui.typeComboBox->addItem(tr("条形码 (UPCE)"), (int)ZXing::BarcodeFormat::UPCE);
     ui.typeComboBox->setCurrentIndex(0);
 
+    ui.eccLevelComboBox->addItem("0", "0");
+    ui.eccLevelComboBox->addItem("1 (L~7%)", "1");
+    ui.eccLevelComboBox->addItem("2 (M~15%)", "2");
+    ui.eccLevelComboBox->addItem("3 (Q~25%)", "3");
+    ui.eccLevelComboBox->addItem("4 (H~30%)", "4");
+    ui.eccLevelComboBox->addItem("5 (~35%)", "5");
+    ui.eccLevelComboBox->addItem("6 (~40%)", "6");
+    ui.eccLevelComboBox->addItem("7 (~45%)", "7");
+    ui.eccLevelComboBox->addItem("8 (~50%)", "8");
+    ui.eccLevelComboBox->setCurrentIndex(1);
+
     ui.rotateComboBox->addItem(tr("不旋转"), 0);
     ui.rotateComboBox->addItem(tr("旋转90度"), 90);
     ui.rotateComboBox->addItem(tr("旋转180度"), 180);
@@ -46,6 +57,10 @@ QRCodeGenerator::QRCodeGenerator(QWidget *parent)
     connect(ui.generateBtn, &QPushButton::clicked, this, &QRCodeGenerator::onGenerateBtnClicked);
     connect(ui.saveImgBtn, &QPushButton::clicked, this, &QRCodeGenerator::onSaveImgBtnClicked);
 }
+
+// Aztec Code ECC Level map to 0~8
+// 理论上 Aztec Code 纠错级别支持 1% ~ 99%，但在ZXing内只支持 10%, 23%, 36%, 50% 4个级别
+static std::string AztecEcl[9] = { "1%", "7%", "15%", "25%", "30%", "35%", "40%", "45%", "50%" };
 
 QRCodeGenerator::~QRCodeGenerator()
 {}
@@ -62,8 +77,10 @@ void QRCodeGenerator::onGenerateBtnClicked()
     int width = ui.widthSpinBox->value();
 
     auto format = ZXing::BarcodeFormat(ui.typeComboBox->currentData().toInt());
-    std::string ecl = ZXing::BarcodeFormats(ZXing::BarcodeFormat::LinearCodes).testFlag(format) ?
-        "" : ui.eccLevelComboBox->currentText().toStdString();
+    std::string ecl = ZXing::IsLinearBarcode(format) ?
+        "" : ui.eccLevelComboBox->currentData().toString().toStdString();
+    if (format == ZXing::BarcodeFormat::Aztec)
+        ecl = AztecEcl[ui.eccLevelComboBox->currentIndex()];
 
     auto crtOpt = ZXing::CreatorOptions(format).ecLevel(ecl);
     auto wrtOpt = ZXing::WriterOptions().rotate(ui.rotateComboBox->currentData().toInt())
@@ -79,7 +96,7 @@ void QRCodeGenerator::onGenerateBtnClicked()
     }
     catch (const std::invalid_argument &e)
     {
-        QMessageBox::critical(this, tr("错误"), tr("生成失败！\n输入的内容不符合该编码生成限制。\n%1").arg(e.what()));
+        QMessageBox::critical(this, tr("错误"), tr("生成失败！\n输入的内容或选项不符合该编码规范。\n%1").arg(e.what()));
         return;
     }
 }

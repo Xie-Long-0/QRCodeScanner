@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(QRCodeScanner VERSION 1.2.2 LANGUAGES CXX)
+project(QRCodeScanner VERSION 1.2.4 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED OFF)
@@ -8,30 +8,22 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set (ZXING_PUBLIC_FLAGS
+add_definitions(
     -DZXING_EXPERIMENTAL_API
-)
-
-if (MSVC)
-    set (ZXING_PUBLIC_FLAGS ${ZXING_PUBLIC_FLAGS}
-        $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
-    )
-endif()
-
-set (ZXING_PRIVATE_FLAGS
     -DZXING_USE_ZINT
 )
+
 if (MSVC)
-    set (ZXING_PRIVATE_FLAGS ${ZXING_PRIVATE_FLAGS}
-        -D_SCL_SECURE_NO_WARNINGS
-        -D_CRT_SECURE_NO_WARNINGS
-        -D_CRT_NONSTDC_NO_WARNINGS
-        -DNOMINMAX
+    set (PUBLIC_FLAGS ${PUBLIC_FLAGS}
+        $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
         /utf-8
     )
-else()
-    set (ZXING_PRIVATE_FLAGS ${ZXING_PRIVATE_FLAGS}
-        -Wall -Wextra -Wno-missing-braces -Werror=undef -Werror=return-type)
+
+    add_definitions(
+        -DUNICODE
+        -D_UNICODE
+        -DNOMINMAX
+    )
 endif()
 
 include (CheckCXXCompilerFlag)
@@ -43,7 +35,7 @@ include (CheckCXXCompilerFlag)
 set(FILE_PREFIX_ARG "-fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}/=")
 check_cxx_compiler_flag("${FILE_PREFIX_ARG}" HAS_FILE_PREFIX_ARG)
 if(HAS_FILE_PREFIX_ARG)
-    set(ZXING_PRIVATE_FLAGS ${ZXING_PRIVATE_FLAGS} "${FILE_PREFIX_ARG}")
+    set(PRIVATE_FLAGS ${PRIVATE_FLAGS} "${FILE_PREFIX_ARG}")
 endif()
 
 # 向编译器添加编译选项
@@ -90,7 +82,7 @@ find_package(${QT_NAME} REQUIRED COMPONENTS Core Gui Widgets
     LinguistTools
 )
 
-# 包含 ZXing 库
+# 导入 ZXing
 set(ZXING_DIR "${PROJECT_SOURCE_DIR}/ZXing-${CMAKE_BUILD_TYPE}")
 include(${ZXING_DIR}/lib/cmake/ZXing/ZXingConfig.cmake)
 
@@ -156,8 +148,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_compile_options (${PROJECT_NAME}
-    PUBLIC ${ZXING_PUBLIC_FLAGS}
-    PRIVATE ${ZXING_PRIVATE_FLAGS}
+    PUBLIC ${PUBLIC_FLAGS}
+    PRIVATE ${PRIVATE_FLAGS}
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
